@@ -106,10 +106,15 @@ body{
 /* ============ halaman utama (papan bintang) ============ */
 .layar{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:var(--pad) calc(var(--pad)*1.4);gap:1.6vmin}
 
-.tombol-mengambang{position:absolute;top:1.6vmin;z-index:20;background:rgba(255,246,230,.1);border:0;color:var(--susu);cursor:pointer;
-  width:6vmin;height:6vmin;border-radius:50%;font-size:2.6vmin;display:grid;place-items:center}
+.tombol-mengambang{position:absolute;top:1.6vmin;z-index:20;background:rgba(255,246,230,.1);border:.35vmin solid transparent;color:var(--susu);cursor:pointer;
+  width:6vmin;height:6vmin;border-radius:50%;font-size:2.6vmin;display:grid;place-items:center;transition:transform .12s ease-out,border-color .12s ease-out}
 .tombol-mengambang.kiri{left:1.6vmin}.tombol-mengambang.kanan{right:1.6vmin}
+.tombol-mengambang.tengah{left:50%;transform:translateX(-50%)}
+.tombol-mengambang.tengah.tutup{background:rgba(224,87,74,.22);font-size:2.2vmin}
 .tombol-mengambang:hover,.tombol-mengambang:focus-visible{background:rgba(255,246,230,.22);outline:none}
+.tombol-mengambang.fokus{border-color:var(--bintang);transform:scale(1.1)}
+.tombol-mengambang.tengah.fokus{transform:translateX(-50%) scale(1.1)}
+.tombol-simpan-hari.fokus{outline:.5vmin solid var(--susu);transform:scale(1.06)}
 #lampu-sinkron{position:absolute;right:.5vmin;bottom:.5vmin;width:1.4vmin;height:1.4vmin;border-radius:50%;background:#777;transition:background .3s}
 #lampu-sinkron.aman{background:var(--daun)} #lampu-sinkron.antre{background:var(--bintang)} #lampu-sinkron.mati{background:#e0574a}
 
@@ -127,11 +132,13 @@ main.papan-dua-kolom{flex:1 1 auto;display:grid;grid-template-columns:1.05fr 1fr
 
 .kolom-tugas{display:flex;flex-direction:column;min-height:0}
 #papan{flex:1 1 auto;display:flex;flex-direction:column;gap:1.2vmin;overflow-y:auto;padding-right:.4vmin}
-.kartu{position:relative;border:0;cursor:pointer;text-align:left;color:var(--susu);width:100%;
-  background:rgba(255,246,230,.05);border-radius:1.6vmin;padding:1.4vmin 2vmin 1.4vmin 1vmin;
+.kartu{position:relative;border:.4vmin solid transparent;cursor:pointer;text-align:left;color:var(--susu);width:100%;
+  background:rgba(255,246,230,.05);border-radius:1.6vmin;padding:1.2vmin 1.8vmin 1.2vmin .8vmin;
   display:flex;align-items:center;gap:1.6vmin;font-family:inherit;overflow:hidden;
   border-left:1vmin solid var(--warna,var(--bintang));
-  transition:transform .18s cubic-bezier(.2,.8,.3,1.4), box-shadow .18s, background .3s}
+  transform:translateZ(0) scale(1);
+  transition:transform .12s ease-out, border-color .12s ease-out, background .25s ease-out;
+  will-change:transform}
 .kartu .lencana{flex:0 0 auto;width:4.2vmin;height:4.2vmin;border-radius:50%;background:var(--warna,var(--bintang));color:#231a3a;
   font-family:"Fredoka",sans-serif;font-weight:700;font-size:2vmin;display:grid;place-items:center}
 .kartu .emoji{flex:0 0 auto;font-size:4.6vmin;line-height:1;filter:drop-shadow(0 .4vmin .6vmin rgba(0,0,0,.3))}
@@ -139,8 +146,8 @@ main.papan-dua-kolom{flex:1 1 auto;display:grid;grid-template-columns:1.05fr 1fr
 .kartu .nama{font-family:"Fredoka",sans-serif;font-weight:600;font-size:2.2vmin;line-height:1.2}
 .kartu .kutipan{font-size:1.6vmin;color:var(--kabur);font-weight:700;font-style:italic;margin-top:.2vmin}
 .kartu.selesai{background:rgba(53,217,161,.16)}
-.kartu:focus-visible,.kartu.fokus{outline:none;transform:scale(1.02);
-  box-shadow:0 0 0 .5vmin var(--bintang), 0 1.4vmin 2.4vmin rgba(0,0,0,.4)}
+.kartu:focus-visible,.kartu.fokus{outline:none;transform:translateZ(0) scale(1.02);
+  border-color:var(--bintang);z-index:2}
 .kartu .centang{flex:0 0 auto;width:4vmin;height:4vmin;border-radius:50%;
   background:var(--daun);color:#0d3a2c;display:grid;place-items:center;font-size:2.2vmin;font-weight:900;
   transform:scale(0);transition:transform .25s cubic-bezier(.2,.8,.3,1.6)}
@@ -332,6 +339,7 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
 <div class="halaman" id="layar-utama">
   <div class="layar">
     <button class="tombol-mengambang kiri" id="tbl-suara" title="Suara">🔊</button>
+    <button class="tombol-mengambang tengah tutup" id="tbl-tutup" title="Tutup aplikasi">✕</button>
     <button class="tombol-mengambang kanan" id="tbl-ortu" title="Pengaturan orang tua">⚙️<i id="lampu-sinkron"></i></button>
 
     <div class="banner-judul">
@@ -366,6 +374,7 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
 
     <button class="tombol-simpan-hari" id="tbl-simpan-hari" title="Simpan aktivitas hari ini">💾 Simpan Hari Ini</button>
     <div class="toast" id="toast-simpan">Tersimpan! ✓</div>
+    <div class="toast" id="toast-tutup">Musik dimatikan. Tekan tombol Home di remote TV untuk keluar sepenuhnya.</div>
   </div>
 </div>
 
@@ -507,6 +516,15 @@ const AWAL = {
 let data = structuredClone(AWAL);
 let antre = [];
 let fokus = 0;
+
+/* ============ navigasi remote lintas zona ============
+   zona "atas": tombol suara / tutup / ortu (kiri-kanan)
+   zona "aktivitas": daftar kartu aktivitas + kartu "tambah aktivitas" (atas-bawah)
+   zona "simpan": tombol simpan hari ini
+*/
+const ZONA_ATAS = ["tbl-suara","tbl-tutup","tbl-ortu"];
+let zona = "aktivitas";
+let posAtas = 1;
 
 /* ============ tanggal (minggu mulai hari Minggu) ============ */
 const kunciTgl = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -739,7 +757,7 @@ let bolehBatalHadiah = false;
 function tampilkan(nama){
   document.querySelectorAll(".halaman").forEach(el=>el.classList.remove("aktif"));
   document.getElementById("layar-"+nama).classList.add("aktif");
-  if(nama==="utama") gambar();
+  if(nama==="utama"){ zona="aktivitas"; fokus=0; posAtas=1; gambar(); }
   if(nama==="hadiah") gambarHadiah();
   if(nama==="onboarding") gambarOnboarding();
 }
@@ -939,12 +957,14 @@ document.getElementById("tbl-ubah-profil").onclick = ()=>{
 /* ============ halaman 3: papan ============ */
 const papan = document.getElementById("papan");
 const PALET_LENCANA = ["#ff8fb1","#35d9a1","#ffc93c","#8a7dfa","#5ecbff","#ff7b3d"];
+function totalItemAktivitas(){ return data.aktivitas.length + 1; } // +1 untuk kartu "Tambah Aktivitas"
+
 function gambar(){
   const hari = data.catatan[hariIni()] || {};
   papan.innerHTML = data.aktivitas.map((a,i)=>{
     const n = hari[a.id]||0, penuh = n>=a.maks;
     const warna = PALET_LENCANA[i % PALET_LENCANA.length];
-    return `<button class="kartu ${penuh?"selesai":""} ${i===fokus?"fokus":""}" style="--warna:${warna}" data-i="${i}">
+    return `<button class="kartu ${penuh?"selesai":""}" style="--warna:${warna}" data-i="${i}">
       <span class="lencana">${i+1}</span>
       <span class="emoji">${a.emoji}</span>
       <span class="teks-tugas">
@@ -954,15 +974,69 @@ function gambar(){
       ${a.maks>1?`<span class="hitung">${n}/${a.maks}</span>`:""}
       <span class="centang">✓</span>
     </button>`;
-  }).join("") + `<button type="button" class="kartu tambah-aktivitas" id="tbl-tambah-aktivitas-utama">
+  }).join("") + `<button type="button" class="kartu tambah-aktivitas" id="tbl-tambah-aktivitas-utama" data-i="${data.aktivitas.length}">
       <span class="lencana-tambah">+</span>
       <span class="teks-tugas"><span class="nama">Tambah Aktivitas</span></span>
     </button>`;
   papan.querySelectorAll(".kartu[data-i]").forEach(el=>{
-    el.addEventListener("click",()=>{ fokus=+el.dataset.i; tekan(); });
+    el.addEventListener("click",()=>{
+      const i = +el.dataset.i;
+      zona = "aktivitas"; fokus = i;
+      if(i < data.aktivitas.length){ tekan(); }
+      else { mintaPin(ok=>{ if(ok) bukaEditorAktivitasBaru(); }); }
+      perbaruiFokusVisual();
+    });
   });
-  document.getElementById("tbl-tambah-aktivitas-utama").onclick = ()=> mintaPin(ok=>{ if(ok) bukaEditorAktivitasBaru(); });
   perbarui();
+  perbaruiFokusVisual();
+}
+
+/* ---- terapkan tampilan fokus (dipakai remote & disentuh dengan jari) tanpa menggambar ulang papan ---- */
+function perbaruiFokusVisual(){
+  document.querySelectorAll(".kartu.fokus, .tombol-mengambang.fokus, .tombol-simpan-hari.fokus")
+    .forEach(el=>el.classList.remove("fokus"));
+  let target = null;
+  if(zona === "atas"){
+    target = document.getElementById(ZONA_ATAS[posAtas]);
+  } else if(zona === "simpan"){
+    target = document.getElementById("tbl-simpan-hari");
+  } else {
+    target = papan.querySelector(`.kartu[data-i="${fokus}"]`);
+    target?.scrollIntoView({block:"nearest", behavior:"smooth"});
+  }
+  if(target){
+    target.classList.add("fokus");
+    target.focus({preventScroll:true});
+  }
+}
+
+/* ---- pindah antar item DI DALAM satu zona, atau lompat ke zona lain di batas atas/bawah ---- */
+function pindahZona(dx, dy){
+  if(zona === "atas"){
+    if(dx !== 0){ posAtas = Math.min(ZONA_ATAS.length-1, Math.max(0, posAtas+dx)); }
+    else if(dy > 0){ zona = "aktivitas"; fokus = 0; }
+    perbaruiFokusVisual();
+    return;
+  }
+  if(zona === "simpan"){
+    if(dy < 0){ zona = "aktivitas"; fokus = totalItemAktivitas()-1; }
+    perbaruiFokusVisual();
+    return;
+  }
+  // zona === "aktivitas"
+  const total = totalItemAktivitas();
+  if(dy < 0 && fokus === 0){ zona = "atas"; perbaruiFokusVisual(); return; }
+  if(dy > 0 && fokus === total-1){ zona = "simpan"; perbaruiFokusVisual(); return; }
+  if(dy !== 0){ fokus = Math.min(total-1, Math.max(0, fokus+dy)); perbaruiFokusVisual(); }
+  // kiri/kanan di dalam daftar aktivitas (satu kolom) tidak melakukan apa-apa
+}
+
+/* ---- tombol OK/Enter remote, sesuai zona yang sedang aktif ---- */
+function tekanZona(){
+  if(zona === "atas"){ document.getElementById(ZONA_ATAS[posAtas])?.click(); return; }
+  if(zona === "simpan"){ simpanHariIni(); return; }
+  if(fokus < data.aktivitas.length){ tekan(); }
+  else { mintaPin(ok=>{ if(ok) bukaEditorAktivitasBaru(); }); }
 }
 /* susun nomor 1..target berkelok (ular) selebar `kolom` per baris */
 function jalurUlar(target, kolom){
@@ -1086,26 +1160,23 @@ function rayakan(){
   setTimeout(lanjut, 6000);
   t.onclick = lanjut;
 }
-function pindah(dx,dy){
-  let i = fokus + dx + dy;
-  if(i<0) i=0; if(i>=data.aktivitas.length) i=data.aktivitas.length-1;
-  fokus=i;
-  papan.querySelectorAll(".kartu[data-i]").forEach((el,j)=>el.classList.toggle("fokus", j===fokus));
-  papan.querySelector(`[data-i="${fokus}"]`)?.scrollIntoView({block:"nearest"});
-  papan.querySelector(`[data-i="${fokus}"]`)?.focus({preventScroll:true});
-}
 document.addEventListener("keydown", e=>{
   if(document.getElementById("tirai-ortu").classList.contains("tampil")){
     if(e.key==="Escape" || (e.key==="Backspace" && e.target.tagName!=="INPUT")){ tutupOrtu(); e.preventDefault(); }
     return;
   }
+  if(document.getElementById("tirai-pin").classList.contains("tampil") ||
+     document.getElementById("tirai-rayakan").classList.contains("tampil") ||
+     document.getElementById("editor-hadiah").classList.contains("tampil") ||
+     document.getElementById("editor-aktivitas-emoji").classList.contains("tampil") ||
+     document.getElementById("editor-aktivitas-baru").classList.contains("tampil")) return;
   if(!document.getElementById("layar-utama").classList.contains("aktif")) return;
   switch(e.key){
-    case "ArrowLeft": pindah(-1,0); e.preventDefault(); break;
-    case "ArrowRight": pindah(1,0); e.preventDefault(); break;
-    case "ArrowUp": pindah(0,-1); e.preventDefault(); break;
-    case "ArrowDown": pindah(0,1); e.preventDefault(); break;
-    case "Enter": case " ": tekan(); e.preventDefault(); break;
+    case "ArrowLeft": pindahZona(-1,0); e.preventDefault(); break;
+    case "ArrowRight": pindahZona(1,0); e.preventDefault(); break;
+    case "ArrowUp": pindahZona(0,-1); e.preventDefault(); break;
+    case "ArrowDown": pindahZona(0,1); e.preventDefault(); break;
+    case "Enter": case " ": tekanZona(); e.preventDefault(); break;
     case "p": case "P": bukaOrtu(); break;
     case "m": case "M": data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanStatusJarakJauh(); break;
   }
@@ -1163,9 +1234,48 @@ function bukaOrtu(){
   tirai.classList.add("tampil");
 }
 function tutupOrtu(tanpaGambar){ tirai.classList.remove("tampil"); if(!tanpaGambar) gambar(); }
-document.getElementById("tbl-ortu").onclick = ()=> mintaPin(ok=>{ if(ok) bukaOrtu(); });
-document.getElementById("tbl-suara").onclick = ()=>{ data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanStatusJarakJauh(); };
+document.getElementById("tbl-ortu").onclick = ()=>{
+  zona="atas"; posAtas=ZONA_ATAS.indexOf("tbl-ortu"); perbaruiFokusVisual();
+  mintaPin(ok=>{ if(ok) bukaOrtu(); });
+};
+document.getElementById("tbl-suara").onclick = ()=>{
+  zona="atas"; posAtas=ZONA_ATAS.indexOf("tbl-suara"); perbaruiFokusVisual();
+  data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanStatusJarakJauh();
+};
 tirai.addEventListener("click", e=>{ if(e.target===tirai) tutupOrtu(); });
+
+/* ============ tutup aplikasi (tombol ✕) ============
+   Aplikasi TV ini dibungkus jadi APK lewat WebIntoApp, yang sebetulnya cuma
+   WebView. Halaman ini sendiri tidak bisa "membunuh" APK-nya secara pasti —
+   itu wewenang wrapper Android-nya. Di sini kita coba beberapa nama jembatan
+   JavaScript yang umum dipakai berbagai wrapper webview->apk; kalau tidak ada
+   yang tersedia, minimal musik latar & suara dihentikan dan pengguna diberi
+   tahu untuk memakai tombol Home di remote TV.
+*/
+function tutupAplikasi(){
+  try{ audioMusik.pause(); }catch(e){}
+  const percobaan = [
+    ()=> window.Android && window.Android.closeApp && window.Android.closeApp(),
+    ()=> window.Android && window.Android.exitApp && window.Android.exitApp(),
+    ()=> window.Android && window.Android.finish && window.Android.finish(),
+    ()=> window.AndroidInterface && window.AndroidInterface.exitApp && window.AndroidInterface.exitApp(),
+    ()=> window.webintoapp && window.webintoapp.exit && window.webintoapp.exit(),
+    ()=> navigator.app && navigator.app.exitApp && navigator.app.exitApp(),
+    ()=> window.close && window.close()
+  ];
+  for(const coba of percobaan){ try{ coba(); }catch(e){} }
+  setTimeout(()=>{
+    if(!document.hidden){
+      const t = document.getElementById("toast-tutup");
+      t.classList.add("tampil");
+      setTimeout(()=>t.classList.remove("tampil"), 3600);
+    }
+  }, 350);
+}
+document.getElementById("tbl-tutup").onclick = ()=>{
+  zona="atas"; posAtas=ZONA_ATAS.indexOf("tbl-tutup"); perbaruiFokusVisual();
+  tutupAplikasi();
+};
 
 function gambarDaftar(){
   const d = document.getElementById("daftar-aktivitas");
