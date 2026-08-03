@@ -153,4 +153,190 @@ main.papan-dua-kolom{flex:1 1 auto;display:grid;grid-template-columns:1.05fr 1fr
 .titik{position:relative;aspect-ratio:1;width:100%;max-width:5.4vmin;justify-self:center;background:rgba(255,246,230,.14);
   clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
   display:grid;place-items:center;font-size:1.35vmin;font-weight:900;color:var(--kabur);padding-top:6%}
-.titik
+.titik.nyala{background:linear-gradient(160deg,var(--bintang),var(--jingga));color:#3a2a00}
+.titik.sekarang{background:var(--bintang);color:#3a2a00;font-size:1.6vmin;filter:drop-shadow(0 0 .8vmin var(--bintang));animation:kelap 1.3s infinite}
+@keyframes kelap{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+.hadiah-akhir{font-size:6vmin;filter:grayscale(1) opacity(.4);transition:.4s;margin-top:.2vmin}
+.hadiah-akhir.buka{filter:none;animation:goyang 1.2s infinite}
+@keyframes goyang{0%,100%{transform:rotate(-7deg) scale(1)}50%{transform:rotate(7deg) scale(1.12)}}
+.sisa-teks{font-size:1.8vmin;color:var(--kabur);font-weight:700}
+
+footer.minggu{flex:0 0 auto;display:flex;gap:1.4vmin;align-items:flex-end;justify-content:center;padding:1.2vmin 2.2vmin}
+.hari{display:flex;flex-direction:column;align-items:center;gap:.6vmin;width:4.2vmin}
+.batang{width:100%;height:4.2vmin;background:rgba(255,246,230,.1);border-radius:.8vmin;display:flex;align-items:flex-end;overflow:hidden}
+.batang i{display:block;width:100%;background:linear-gradient(180deg,var(--bintang),var(--jingga));border-radius:.8vmin;transition:height .5s}
+.hari small{font-size:1.4vmin;color:var(--kabur);font-weight:900}
+.hari.ini small{color:var(--bintang)}
+
+.tombol-simpan-hari{position:absolute;right:1.6vmin;bottom:1.6vmin;z-index:20;font-family:"Fredoka",sans-serif;font-weight:600;
+  font-size:1.9vmin;padding:1.3vmin 2.4vmin;border-radius:1.4vmin;border:0;background:var(--daun);color:#0d3a2c;
+  cursor:pointer;box-shadow:0 .6vmin 1.6vmin rgba(0,0,0,.35);transition:transform .15s}
+.tombol-simpan-hari:hover,.tombol-simpan-hari:focus-visible{transform:scale(1.05);outline:none}
+.toast{position:fixed;left:50%;bottom:8vmin;transform:translateX(-50%) translateY(2vmin);z-index:80;
+  background:var(--daun);color:#0d3a2c;font-family:"Fredoka",sans-serif;font-weight:600;font-size:2.1vmin;
+  padding:1.4vmin 3vmin;border-radius:99px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;box-shadow:0 .8vmin 2vmin rgba(0,0,0,.35)}
+.toast.tampil{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.kotak-pin{width:min(64vmin,90vw);text-align:center}
+.pin-tampil{font-family:"Fredoka",sans-serif;font-size:5.2vmin;letter-spacing:1.2vmin;color:var(--bintang);margin:1.6vmin 0}
+.grid-pin{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4vmin;max-width:48vmin;margin:0 auto}
+.tombol-pin{aspect-ratio:1;border-radius:50%;border:.25vmin solid rgba(255,246,230,.16);background:rgba(255,246,230,.07);
+  color:var(--susu);font-family:"Fredoka",sans-serif;font-size:2.8vmin;font-weight:600;cursor:pointer}
+.tombol-pin:hover,.tombol-pin:focus-visible{border-color:var(--bintang);outline:none}
+
+.terbang{position:fixed;z-index:50;font-size:5vmin;pointer-events:none;transition:transform .9s cubic-bezier(.4,0,.2,1),opacity .9s}
+.tirai{position:fixed;inset:0;z-index:60;background:rgba(10,13,40,.86);backdrop-filter:blur(6px);display:none;place-items:center;padding:4vmin}
+.tirai.tampil{display:grid}
+.rayakan{text-align:center;position:relative}
+.rayakan .besar{font-size:16vmin;line-height:1;animation:goyang 1s infinite}
+.rayakan h2{font-family:"Fredoka",sans-serif;font-size:6vmin;margin:2vmin 0 1vmin;color:var(--bintang)}
+.rayakan p{font-size:2.6vmin;color:var(--kabur);font-weight:700}
+.confeti{position:fixed;top:-8vmin;font-size:3.4vmin;pointer-events:none;z-index:65;animation:jatuh linear forwards}
+@keyframes jatuh{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(112vh) rotate(340deg);opacity:.2}}
+
+.ortu{background:var(--nila);border-radius:var(--r);width:min(118vmin,94vw);max-height:90vh;overflow:auto;padding:3.4vmin}
+.ortu h2{font-family:"Fredoka",sans-serif;font-size:3.4vmin;margin-bottom:.6vmin}
+.ortu h3{font-family:"Fredoka",sans-serif;font-size:2.4vmin;margin:3vmin 0 1.4vmin;color:var(--bintang)}
+.ortu .sub{color:var(--kabur);font-size:1.9vmin;font-weight:700}
+.baris{display:flex;gap:1.4vmin;align-items:center;margin-bottom:1.4vmin;flex-wrap:wrap}
+label{font-size:1.9vmin;font-weight:900;color:var(--kabur);min-width:17vmin}
+input[type=text],input[type=number],input[type=url]{font-family:inherit;font-size:2.1vmin;font-weight:700;color:var(--susu);
+  background:rgba(0,0,0,.28);border:.25vmin solid rgba(255,246,230,.18);border-radius:1vmin;padding:1vmin 1.4vmin}
+input:focus{outline:.35vmin solid var(--bintang)}
+.emoji-in{width:7vmin;text-align:center}.num-in{width:9vmin}
+.tumbuh{flex:1 1 18vmin;min-width:14vmin}
+.aksi{display:flex;gap:1.4vmin;flex-wrap:wrap;margin-top:2vmin}
+button.tbl-aksi{font-family:"Fredoka",sans-serif;font-size:2.1vmin;font-weight:600;cursor:pointer;
+  border:0;border-radius:1.2vmin;padding:1.3vmin 2.4vmin;background:var(--bintang);color:#3a2a00}
+button.tbl-aksi.sepi{background:rgba(255,246,230,.12);color:var(--susu)}
+button.tbl-aksi.bahaya{background:#a33;color:#fff}
+button.tbl-aksi:focus-visible{outline:.4vmin solid var(--susu);outline-offset:.3vmin}
+.hapus{background:rgba(255,120,120,.18);color:#ffb3b3;border:0;border-radius:1vmin;padding:1vmin 1.6vmin;cursor:pointer;font-size:2vmin;font-weight:900}
+.catatan{font-size:1.7vmin;color:var(--kabur);line-height:1.6;margin-top:1.6vmin;font-weight:700}
+kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;font-family:inherit}
+#status-sinkron{font-size:1.9vmin;font-weight:900;color:var(--kabur);margin-top:1.4vmin}
+
+@media (max-aspect-ratio:1/1){
+  :root{--pad:4vw}
+  main.papan-dua-kolom{grid-template-columns:1fr;overflow-y:auto}
+  .kartu .emoji{font-size:8vw}.kartu .nama{font-size:4vw}.kartu .kutipan{font-size:3vw}
+}
+</style>
+</head>
+<body>
+
+<div id="langit"></div>
+
+<div id="hal-onboard" class="halaman">
+  <div class="halaman-tengah">
+    <div class="kotak-halaman">
+      <h1>Selamat Datang di Papan Bintang! ⭐</h1>
+      <p class="sub">Pilih profil untuk memulai perjalanan hebatmu!</p>
+      
+      <div class="tab-gender">
+        <button id="btn-gender-laki" class="aktif" onclick="pilihGender('laki')">👦 Anak Laki-laki</button>
+        <button id="btn-gender-perempuan" onclick="pilihGender('perempuan')">👧 Anak Perempuan</button>
+      </div>
+
+      <div id="grid-avatar-onboard" class="grid-avatar"></div>
+
+      <div class="baris-input-onboard">
+        <div class="kolom-input">
+          <label for="in-onboard-nama">Nama Panggilan</label>
+          <input type="text" id="in-onboard-nama" placeholder="Nama panggilan...">
+        </div>
+        <div class="kolom-input">
+          <label for="in-onboard-usia">Usia (Tahun)</label>
+          <input type="number" id="in-onboard-usia" min="1" max="18" value="5">
+        </div>
+      </div>
+
+      <button id="btn-lanjut-onboard" class="tombol-besar" onclick="lanjutDariOnboarding()">Lanjut ke Pilih Hadiah 🚀</button>
+    </div>
+  </div>
+</div>
+
+<div id="hal-hadiah" class="halaman">
+  <div class="halaman-tengah">
+    <div class="kotak-halaman">
+      <button id="btn-batal-hadiah" class="tombol-kecil-atas" onclick="batalGantiHadiah()">✕</button>
+      <h1>Pilih Hadiah Impianmu! 🎁</h1>
+      <p class="sub">Tentukan hadiah yang ingin kamu dapatkan saat bintangmu penuh.</p>
+
+      <div id="grid-pilihan-hadiah" class="grid-hadiah"></div>
+
+      <button id="btn-mulai-aplikasi" class="tombol-besar" onclick="selesaiPilihHadiah()">Mulai Kumpulkan Bintang! ⭐</button>
+    </div>
+  </div>
+</div>
+
+<div id="editor-hadiah" class="editor-hadiah">
+  <div class="kotak-editor">
+    <h2>Edit Hadiah Kustom 🎨</h2>
+    <label for="in-editor-nama">Nama Hadiah</label>
+    <input type="text" id="in-editor-nama" placeholder="Nama hadiah kustom...">
+
+    <label>Pilih Ikon Emoji</label>
+    <div id="grid-emoji-editor" class="grid-emoji-pilih"></div>
+
+    <div style="display:flex;gap:1.4vmin;justify-content:flex-end">
+      <button class="tbl-aksi sepi" onclick="tutupEditorHadiah()">Batal</button>
+      <button class="tbl-aksi" onclick="simpanEditorHadiah()">Simpan Hadiah</button>
+    </div>
+  </div>
+</div>
+
+<div id="hal-utama" class="halaman">
+  <div class="layar">
+    <button class="tombol-mengambang kiri" onclick="mintaPinOrtu()" title="Pengaturan Orang Tua">⚙️</button>
+    <button class="tombol-mengambang kanan" onclick="bukaPilihHadiahLagi()" title="Ganti Hadiah Target">🎁</button>
+
+    <div class="banner-judul">
+      <span id="txt-avatar" class="banner-avatar">👦</span>
+      <div class="banner-teks">
+        <h1 id="txt-judul-papan">Papan Bintang</h1>
+        <p id="txt-sub-papan">Kumpulkan bintang setiap hari!</p>
+      </div>
+    </div>
+
+    <main class="papan-dua-kolom">
+      <section class="panel kolom-tugas">
+        <h2>📋 Tugas Hari Ini</h2>
+        <div id="papan"></div>
+      </section>
+
+      <section class="panel kolom-progres">
+        <h2><span class="roket-emoji">🚀</span> Perjalanan Bintang</h2>
+        <div class="skor-besar">
+          <span class="label-skor">Total Bintang Hari Ini</span>
+          <b><span id="txt-skor">0</span> / <span id="txt-target">30</span></b>
+          <div class="mini-bintang">⭐⭐⭐⭐⭐</div>
+        </div>
+
+        <div id="grid-jalur" class="grid-jalur"></div>
+
+        <div id="txt-hadiah-akhir" class="hadiah-akhir">🎁</div>
+        <div id="txt-sisa" class="sisa-teks">Kumpulkan bintang untuk mendapatkan hadiah!</div>
+      </section>
+    </main>
+
+    <footer id="footer-minggu" class="minggu"></footer>
+
+    <button id="tbl-simpan-hari" class="tombol-simpan-hari">💾 Simpan Hari Ini</button>
+    <div id="lampu-sinkron" title="Status Sinkronisasi Spreadsheet"></div>
+  </div>
+</div>
+
+<div id="modal-pin" class="tirai">
+  <div class="kotak-halaman kotak-pin">
+    <h2>Keamanan Orang Tua 🔒</h2>
+    <p class="sub">Masukkan 4 digit PIN Orang Tua</p>
+    <div id="txt-pin" class="pin-tampil">••••</div>
+    <div class="grid-pin">
+      <button class="tombol-pin" onclick="tekanPin('1')">1</button>
+      <button class="tombol-pin" onclick="tekanPin('2')">2</button>
+      <button class="tombol-pin" onclick="tekanPin('3')">3</button>
+      <button class="tombol-pin" onclick="tekanPin('4')">4</button>
+      <button class="tombol-pin" onclick="tekanPin('5')">5</button>
+      <button class="tombol-pin" onclick="tekanPin('6')">6</button>
+      <button class="tombol-pin
