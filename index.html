@@ -409,12 +409,12 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
     <div class="baris" style="margin-top:1.4vmin">
       <label for="in-target">Target bintang</label>
       <input type="number" id="in-target" class="num-in" min="3" max="60">
-      <span class="catatan" style="margin:0">5 aktivitas × 1 bintang × 7 hari = 35 bintang/minggu (bisa disesuaikan).</span>
+      <span class="catatan" style="margin:0">5 aktivitas × 1 bintang × 7 hari = 35 bintang/minggu.</span>
     </div>
     <div class="baris">
       <label for="in-pin">PIN Orang Tua</label>
       <input type="text" id="in-pin" class="num-in" maxlength="4" inputmode="numeric" placeholder="1234">
-      <span class="catatan" style="margin:0">4 digit. Diminta setiap buka panel ini atau menambah aktivitas dari halaman utama.</span>
+      <span class="catatan" style="margin:0">4 digit.</span>
     </div>
 
     <h3>Daftar aktivitas</h3>
@@ -444,14 +444,6 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
       <button class="tbl-aksi sepi" id="tbl-reset-hari">Kosongkan hari ini</button>
       <button class="tbl-aksi bahaya" id="tbl-reset-minggu">Mulai minggu baru</button>
     </div>
-
-    <p class="catatan">
-      Navigasi remote: <kbd>◀ ▲ ▼ ▶</kbd> pindah kartu, <kbd>OK</kbd> beri bintang, <kbd>OK</kbd> lagi saat penuh untuk membatalkan.
-      Pintasan: <kbd>P</kbd> panel ini, <kbd>M</kbd> suara.
-      Minggu dimulai hari Minggu dan berakhir hari Sabtu.
-      Spreadsheet adalah penyimpanan utama — dibuka dari HP, laptop, atau TV manapun akan otomatis
-      menampilkan progres terbaru. Penyimpanan di perangkat hanya cadangan sementara saat internet putus.
-    </p>
   </div>
 </div>
 
@@ -511,7 +503,6 @@ function bintangHari(k){
   return n;
 }
 function bintangMinggu(){ let n=0; const m=awalMinggu(); for(let i=0;i<7;i++){ const d=new Date(m); d.setDate(m.getDate()+i); n+=bintangHari(kunciTgl(d)); } return n; }
-function bintangBulan(){ const now=new Date(); let n=0; for(const k in data.catatan){ const [y,mo]=k.split("-").map(Number); if(y===now.getFullYear() && mo===now.getMonth()+1) n+=bintangHari(k); } return n; }
 
 /* ============ langit ============ */
 (function(){ const l=document.getElementById("langit"); let h="";
@@ -537,22 +528,6 @@ function bunyi(naik=true){
     });
   }catch(e){}
 }
-
-/* ============ musik latar (file MP3) ============ */
-const audioMusik = new Audio("musik-latar.mp3");
-audioMusik.loop = true;
-audioMusik.volume = 0.35;
-audioMusik.preload = "auto";
-let musikBerjalan = false;
-function mulaiMusik(){
-  if(musikBerjalan) return;
-  musikBerjalan = true;
-  audioMusik.muted = !data.suara;
-  audioMusik.play().catch(()=>{ musikBerjalan = false; });
-}
-function perbaruiVolumeMusik(){ audioMusik.muted = !data.suara; }
-document.addEventListener("pointerdown", mulaiMusik, {once:true});
-document.addEventListener("keydown", mulaiMusik, {once:true});
 
 /* ============ sinkronisasi spreadsheet ============ */
 const lampu = document.getElementById("lampu-sinkron");
@@ -597,10 +572,10 @@ async function kirimAntre(){
       antre = antre.slice(batch.length);
       await simpanan.taruh(KUNCI_ANTRE, antre);
       setLampu("antre");
-      statusTeks("Terkirim tanpa konfirmasi (mode kompatibel). Cek spreadsheet untuk memastikan.");
+      statusTeks("Terkirim tanpa konfirmasi (mode kompatibel).");
     }catch(e2){
       setLampu("mati");
-      statusTeks("Gagal mengirim: " + err.message + ". Data aman tersimpan di TV, akan dicoba lagi.");
+      statusTeks("Gagal mengirim: " + err.message);
     }
   }
   sedangKirim = false;
@@ -624,12 +599,12 @@ function susunUlangSemua(){
   kirimAntre();
 }
 
-/* ============ status lengkap = sumber utama (dipakai lintas HP/laptop/TV) ============ */
+/* ============ status & rekap dari spreadsheet ============ */
 let statusTimerKirim = null;
 let sedangMuatStatus = false;
 
 async function simpanStatusJarakJauh(){
-  await simpanan.taruh(KUNCI, data); // cadangan lokal cepat, jaga-jaga internet putus
+  await simpanan.taruh(KUNCI, data);
   if(!data.url || !data.token) return;
   clearTimeout(statusTimerKirim);
   statusTimerKirim = setTimeout(async ()=>{
@@ -639,7 +614,6 @@ async function simpanStatusJarakJauh(){
         headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: muatan });
       const j = await r.json();
       setLampu(j.ok ? "aman" : "mati");
-      if(j.ok) statusTeks("Tersambung. Status terbaru tersimpan di spreadsheet.");
     }catch(err){
       try{
         await fetch(data.url, { method:"POST", mode:"no-cors",
@@ -657,24 +631,42 @@ async function muatStatusJarakJauh(tampilkanStatus){
   try{
     const r = await fetch(`${data.url}?token=${encodeURIComponent(data.token)}&aksi=status`);
     const j = await r.json();
+    
+    // 1. Ambil data JSON Status jika ada
     if(j.ok && j.status){
-      const jauh = JSON.parse(j.status);
-      
-      // Gabungkan riwayat catatan secara menyeluruh agar data minggu lalu tidak hilang
-      const catatanGabungan = Object.assign({}, jauh.catatan || {}, data.catatan || {});
-      
+      const jauh = typeof j.status === 'string' ? JSON.parse(j.status) : j.status;
       data = Object.assign(structuredClone(AWAL), jauh);
-      data.catatan = catatanGabungan; // pastikan catatan utuh
       data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
-      
-      await simpanan.taruh(KUNCI, data);
-      tentukanLayar();
-      setLampu("aman");
-      if(tampilkanStatus) statusTeks("Status terbaru dari spreadsheet berhasil dimuat.");
-      berhasil = true;
-    } else if(tampilkanStatus){
-      statusTeks("Belum ada status tersimpan di spreadsheet — akan dibuat otomatis saat pertama kali disimpan.");
     }
+
+    // 2. Rekap ulang baris Peristiwa langsung dari spreadsheet (seperti sistem kuesioner)
+    const daftarPeristiwa = j.peristiwa || j.rows || j.data || (Array.isArray(j) ? j : null);
+    if(daftarPeristiwa && Array.isArray(daftarPeristiwa) && daftarPeristiwa.length > 0){
+      const rekapCatatan = Object.assign({}, data.catatan);
+      daftarPeristiwa.forEach(p => {
+        const tgl = p.tanggal || (p.waktu ? p.waktu.split('T')[0] : null);
+        const id = p.id;
+        const aksi = p.aksi || (p.bintang > 0 ? "tambah" : "batal");
+        if(tgl && id && id !== "uji"){
+          rekapCatatan[tgl] = rekapCatatan[tgl] || {};
+          if(aksi === "tambah" || Number(p.bintang) > 0){
+            rekapCatatan[tgl][id] = (rekapCatatan[tgl][id] || 0) + 1;
+          } else if(aksi === "batal" || Number(p.bintang) < 0){
+            rekapCatatan[tgl][id] = Math.max(0, (rekapCatatan[tgl][id] || 0) - 1);
+          }
+        }
+      });
+      data.catatan = rekapCatatan;
+    }
+
+    // Hitung ulang total bintang minggu ini dari seluruh catatan
+    data.bintangTerkumpul = bintangMinggu();
+    await simpanan.taruh(KUNCI, data);
+    
+    gambar();
+    setLampu("aman");
+    if(tampilkanStatus) statusTeks("Data terbaru dari spreadsheet berhasil direkap dan dimuat.");
+    berhasil = true;
   }catch(err){
     setLampu("mati");
     if(tampilkanStatus) statusTeks("Gagal mengambil status: " + err.message);
@@ -751,7 +743,6 @@ let editIndex = null;
 let editorEmojiPilih = null;
 let hadiahSebelumnya = -1;
 
-/* ---- editor emoji aktivitas (kategori: mandi, makan sehat, tidur, beres-beres, dll) ---- */
 const KATEGORI_EMOJI_AKTIVITAS = [
   { judul:"Kebersihan & Mandi", item:["🛁","🚿","🧼","🪥","🧴","🧻","💧"] },
   { judul:"Makan Sehat", item:["🥦","🥕","🍎","🍌","🍇","🍉","🍊","🥝","🍓","🥗","🥛"] },
@@ -785,7 +776,6 @@ function gambarGridEmojiAktivitas(){
 }
 document.getElementById("tbl-aktivitas-emoji-tutup").onclick = ()=>{ document.getElementById("editor-aktivitas-emoji").classList.remove("tampil"); };
 
-/* ---- tambah aktivitas baru langsung dari halaman utama ---- */
 let emojiAktivitasBaruPilih = "⭐";
 function bukaEditorAktivitasBaru(){
   document.getElementById("in-aktivitas-baru-nama").value = "";
@@ -913,7 +903,7 @@ function gambar(){
   document.getElementById("tbl-tambah-aktivitas-utama").onclick = ()=> mintaPin(ok=>{ if(ok) bukaEditorAktivitasBaru(); });
   perbarui();
 }
-/* susun nomor 1..target berkelok (ular) selebar `kolom` per baris */
+
 function jalurUlar(target, kolom){
   const hasil = [];
   const totalBaris = Math.ceil(target/kolom);
@@ -926,12 +916,15 @@ function jalurUlar(target, kolom){
   }
   return hasil;
 }
+
 function perbarui(){
   document.getElementById("nama-anak").textContent = data.nama;
   document.getElementById("nama-anak-judul").textContent = data.nama;
   document.getElementById("avatar").textContent = data.avatar;
   document.getElementById("tanggal").textContent = "Kumpulkan Bintang dan Dapatkan Hadiah!";
 
+  // Hitung selalu bintangTerkumpul dari rekapitulasi riwayat mingguan
+  data.bintangTerkumpul = bintangMinggu();
   const m = data.bintangTerkumpul;
   document.getElementById("skor-minggu").textContent = `${m} / ${data.target}`;
   const isiPenuh = Math.min(5, Math.round((m/Math.max(data.target,1))*5));
@@ -982,6 +975,7 @@ function bintangTerbang(dariEl){
   });
   setTimeout(()=>s.remove(),950);
 }
+
 async function tekan(){
   const a = data.aktivitas[fokus]; if(!a) return;
   const k = hariIni();
@@ -990,11 +984,9 @@ async function tekan(){
   const sebelum = data.bintangTerkumpul;
   if(n >= a.maks){
     delete data.catatan[k][a.id]; for(let i=0;i<n;i++) catatPeristiwa(a,-1);
-    data.bintangTerkumpul = Math.max(0, data.bintangTerkumpul - a.bintang*n);
     bunyi(false);
   } else {
     data.catatan[k][a.id] = n+1; catatPeristiwa(a,1);
-    data.bintangTerkumpul += a.bintang;
   }
   gambar();
   const kartu = papan.querySelector(`[data-i="${fokus}"]`);
@@ -1002,6 +994,7 @@ async function tekan(){
   await simpanStatusJarakJauh();
   if(sebelum < data.target && data.bintangTerkumpul >= data.target) rayakan();
 }
+
 function tebarKonfeti(){
   const emoji = ["🎉","✨","⭐","🎊","🌟"];
   const hasil = [];
@@ -1017,6 +1010,7 @@ function tebarKonfeti(){
   }
   return hasil;
 }
+
 function rayakan(){
   const hi = data.hadiah[data.hadiahTerpilih];
   document.getElementById("judul-rayakan").textContent = `Hebat, ${data.nama}!`;
@@ -1035,6 +1029,7 @@ function rayakan(){
   setTimeout(lanjut, 6000);
   t.onclick = lanjut;
 }
+
 function pindah(dx,dy){
   let i = fokus + dx + dy;
   if(i<0) i=0; if(i>=data.aktivitas.length) i=data.aktivitas.length-1;
@@ -1043,6 +1038,7 @@ function pindah(dx,dy){
   papan.querySelector(`[data-i="${fokus}"]`)?.scrollIntoView({block:"nearest"});
   papan.querySelector(`[data-i="${fokus}"]`)?.focus({preventScroll:true});
 }
+
 document.addEventListener("keydown", e=>{
   if(document.getElementById("tirai-ortu").classList.contains("tampil")){
     if(e.key==="Escape" || (e.key==="Backspace" && e.target.tagName!=="INPUT")){ tutupOrtu(); e.preventDefault(); }
@@ -1056,7 +1052,7 @@ document.addEventListener("keydown", e=>{
     case "ArrowDown": pindah(0,1); e.preventDefault(); break;
     case "Enter": case " ": tekan(); e.preventDefault(); break;
     case "p": case "P": bukaOrtu(); break;
-    case "m": case "M": data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanStatusJarakJauh(); break;
+    case "m": case "M": data.suara=!data.suara; perbarui(); simpanStatusJarakJauh(); break;
   }
 });
 
@@ -1113,7 +1109,7 @@ function bukaOrtu(){
 }
 function tutupOrtu(tanpaGambar){ tirai.classList.remove("tampil"); if(!tanpaGambar) gambar(); }
 document.getElementById("tbl-ortu").onclick = ()=> mintaPin(ok=>{ if(ok) bukaOrtu(); });
-document.getElementById("tbl-suara").onclick = ()=>{ data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanStatusJarakJauh(); };
+document.getElementById("tbl-suara").onclick = ()=>{ data.suara=!data.suara; perbarui(); simpanStatusJarakJauh(); };
 tirai.addEventListener("click", e=>{ if(e.target===tirai) tutupOrtu(); });
 
 function gambarDaftar(){
@@ -1193,7 +1189,7 @@ document.getElementById("tbl-simpan-hari").onclick = simpanHariIni;
 
 /* ============ mulai ============ */
 (async function(){
-  // 1) Muat cadangan lokal terlebih dahulu
+  // 1) Load penyimpanan lokal
   const tersimpan = await simpanan.ambil(KUNCI);
   if(tersimpan && tersimpan.aktivitas) data = Object.assign(structuredClone(AWAL), tersimpan);
   if(!data.url) data.url = AWAL.url;
@@ -1201,18 +1197,18 @@ document.getElementById("tbl-simpan-hari").onclick = simpanHariIni;
   data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
   antre = (await simpanan.ambil(KUNCI_ANTRE)) || [];
 
-  // 2) Prioritaskan muat data terbaru dari Spreadsheet jika URL & Token sudah dikonfigurasi
+  // 2) Langsung rekap & muat data mentah dari spreadsheet begitu link dibuka
   if(data.url && data.token){
     setLampu("antre");
     await muatStatusJarakJauh(false);
   }
 
-  // 3) Render tampilan setelah data dari cloud dipastikan termuat
+  // 3) Tampilkan layar utama
   tentukanLayar();
   kirimAntre();
 
-  // 4) Sinkronisasi latar belakang secara berkala
-  setInterval(()=>{ perbarui(); kirimAntre(); muatStatusJarakJauh(false); }, 20000);
+  // 4) Polling berkala
+  setInterval(()=>{ muatStatusJarakJauh(false); }, 15000);
   document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) muatStatusJarakJauh(false); });
   window.addEventListener("online", ()=>{ kirimAntre(); muatStatusJarakJauh(false); });
 })();
