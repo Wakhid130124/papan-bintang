@@ -578,6 +578,24 @@ function perbaruiVolumeMusik(){ audioMusik.muted = !data.suara; }
 document.addEventListener("pointerdown", mulaiMusik, {once:true});
 document.addEventListener("keydown", mulaiMusik, {once:true});
 
+/* ============ hentikan musik otomatis saat app diminimalkan/disembunyikan ============
+   WebIntoApp (dan wrapper WebView sejenis) umumnya tidak benar-benar menutup app saat
+   tombol Back/Home ditekan — app hanya diminimalkan ke background sehingga proses &
+   audio-nya tetap hidup. Daripada mengandalkan cara "menutup app" yang tidak disediakan
+   wrapper-nya, kita pastikan musik & suara berhenti sendiri begitu halaman ini tidak
+   lagi terlihat, apa pun penyebabnya (Back, Home, layar mati, pindah app lain).
+*/
+function jedaMusikKarenaTersembunyi(){
+  try{ audioMusik.pause(); }catch(e){}
+  musikBerjalan = false;
+}
+document.addEventListener("visibilitychange", ()=>{
+  if(document.hidden) jedaMusikKarenaTersembunyi();
+  else if(data.suara) mulaiMusik();
+});
+window.addEventListener("pagehide", jedaMusikKarenaTersembunyi);
+window.addEventListener("blur", jedaMusikKarenaTersembunyi);
+
 /* ============ sinkronisasi spreadsheet ============ */
 const lampu = document.getElementById("lampu-sinkron");
 function setLampu(k){ lampu.className = k; }
@@ -1258,6 +1276,9 @@ function tutupAplikasi(){
     ()=> window.Android && window.Android.exitApp && window.Android.exitApp(),
     ()=> window.Android && window.Android.finish && window.Android.finish(),
     ()=> window.AndroidInterface && window.AndroidInterface.exitApp && window.AndroidInterface.exitApp(),
+    ()=> window.JSInterface && window.JSInterface.exitApp && window.JSInterface.exitApp(),
+    ()=> window.AndroidFunction && window.AndroidFunction.exit && window.AndroidFunction.exit(),
+    ()=> window.app && window.app.exit && window.app.exit(),
     ()=> window.webintoapp && window.webintoapp.exit && window.webintoapp.exit(),
     ()=> navigator.app && navigator.app.exitApp && navigator.app.exitApp(),
     ()=> window.close && window.close()
