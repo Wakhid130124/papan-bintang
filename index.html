@@ -440,8 +440,8 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
     </div>
     <div class="aksi">
       <button class="tbl-aksi sepi" id="tbl-uji">Uji koneksi</button>
-      <button class="tbl-aksi sepi" id="tbl-kirim-ulang">Kirim ulang semua riwayat</button>
-      <button class="tbl-aksi sepi" id="tbl-tarik">Pulihkan dari spreadsheet</button>
+      <button class="tbl-aksi sepi" id="tbl-kirim-ulang">Paksa Simpan ke Spreadsheet</button>
+      <button class="tbl-aksi sepi" id="tbl-tarik">Tarik Status Terbaru dari Spreadsheet</button>
     </div>
     <p id="status-sinkron">Belum tersambung.</p>
 
@@ -455,7 +455,8 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
       Navigasi remote: <kbd>◀ ▲ ▼ ▶</kbd> pindah kartu, <kbd>OK</kbd> beri bintang, <kbd>OK</kbd> lagi saat penuh untuk membatalkan.
       Pintasan: <kbd>P</kbd> panel ini, <kbd>M</kbd> suara.
       Minggu dimulai hari Minggu dan berakhir hari Sabtu.
-      Data selalu tersimpan di TV ini lebih dulu; spreadsheet hanya cadangan dan laporan.
+      Spreadsheet adalah penyimpanan utama — dibuka dari HP, laptop, atau TV manapun akan otomatis
+      menampilkan progres terbaru. Penyimpanan di perangkat hanya cadangan sementara saat internet putus.
     </p>
   </div>
 </div>
@@ -629,25 +630,54 @@ function susunUlangSemua(){
   kirimAntre();
 }
 
-async function tarikDariSheet(){
-  if(!data.url || !data.token){ statusTeks("Isi URL dan kata rahasia dulu."); return; }
-  statusTeks("Mengambil data…");
+/* ============ status lengkap = sumber utama (dipakai lintas HP/laptop/TV) ============ */
+let statusTimerKirim = null;
+let sedangMuatStatus = false;
+
+async function simpanStatusJarakJauh(){
+  await simpanan.taruh(KUNCI, data); // cadangan lokal cepat, jaga-jaga internet putus
+  if(!data.url || !data.token) return;
+  clearTimeout(statusTimerKirim);
+  statusTimerKirim = setTimeout(async ()=>{
+    const muatan = JSON.stringify({ token: data.token, aksi:"simpanStatus", status: JSON.stringify(data) });
+    try{
+      const r = await fetch(data.url, { method:"POST", redirect:"follow",
+        headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: muatan });
+      const j = await r.json();
+      setLampu(j.ok ? "aman" : "mati");
+      if(j.ok) statusTeks("Tersambung. Status terbaru tersimpan di spreadsheet.");
+    }catch(err){
+      try{
+        await fetch(data.url, { method:"POST", mode:"no-cors",
+          headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: muatan });
+        setLampu("antre");
+      }catch(e2){ setLampu("mati"); }
+    }
+  }, 400);
+}
+
+async function muatStatusJarakJauh(tampilkanStatus){
+  if(!data.url || !data.token || sedangMuatStatus) return;
+  sedangMuatStatus = true;
   try{
-    const r = await fetch(data.url + "?token=" + encodeURIComponent(data.token));
+    const r = await fetch(`${data.url}?token=${encodeURIComponent(data.token)}&aksi=status`);
     const j = await r.json();
-    if(!j.ok) throw new Error(j.pesan);
-    const baru = {};
-    j.peristiwa.forEach(p=>{
-      const a = data.aktivitas.find(x=>x.id===p.id); if(!a) return;
-      baru[p.tanggal] = baru[p.tanggal] || {};
-      const tambah = p.bintang > 0 ? 1 : -1;
-      baru[p.tanggal][p.id] = Math.max(0, Math.min(a.maks, (baru[p.tanggal][p.id]||0) + tambah));
-    });
-    data.catatan = baru;
-    await simpanan.taruh(KUNCI, data);
-    gambar();
-    statusTeks(`Berhasil memulihkan ${j.peristiwa.length} baris.`);
-  }catch(err){ statusTeks("Gagal memulihkan: " + err.message); }
+    if(j.ok && j.status){
+      const jauh = JSON.parse(j.status);
+      data = Object.assign(structuredClone(AWAL), jauh);
+      data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
+      await simpanan.taruh(KUNCI, data);
+      tentukanLayar();
+      setLampu("aman");
+      if(tampilkanStatus) statusTeks("Status terbaru dari spreadsheet berhasil dimuat.");
+    } else if(tampilkanStatus){
+      statusTeks("Belum ada status tersimpan di spreadsheet — akan dibuat otomatis saat pertama kali disimpan.");
+    }
+  }catch(err){
+    setLampu("mati");
+    if(tampilkanStatus) statusTeks("Gagal mengambil status: " + err.message);
+  }
+  sedangMuatStatus = false;
 }
 
 /* ============ pengalih halaman ============ */
@@ -707,7 +737,7 @@ document.getElementById("tbl-onboard-ok").onclick = async ()=>{
   data.usia = usia>0 ? Math.max(1,Math.min(15,usia)) : null;
   data.avatar = avatarPilihSementara;
   data.onboarded = true;
-  await simpanan.taruh(KUNCI, data);
+  await simpanStatusJarakJauh();
   tentukanLayar();
 };
 
@@ -745,7 +775,7 @@ function gambarGridEmojiAktivitas(){
   const terpilih = data.aktivitas[indexEditAktivitasEmoji]?.emoji;
   gambarKategoriEmoji(document.getElementById("grid-emoji-aktivitas"), terpilih, async (e)=>{
     data.aktivitas[indexEditAktivitasEmoji].emoji = e;
-    await simpanan.taruh(KUNCI, data);
+    await simpanStatusJarakJauh();
     document.getElementById("editor-aktivitas-emoji").classList.remove("tampil");
     gambarDaftar();
   });
@@ -773,7 +803,7 @@ document.getElementById("tbl-aktivitas-baru-simpan").onclick = async ()=>{
   if(!nama) return;
   const kutipan = document.getElementById("in-aktivitas-baru-kutipan").value.trim();
   data.aktivitas.push({ id:"a"+Date.now(), emoji:emojiAktivitasBaruPilih||"⭐", nama, kutipan, bintang:1, maks:1 });
-  await simpanan.taruh(KUNCI, data);
+  await simpanStatusJarakJauh();
   document.getElementById("editor-aktivitas-baru").classList.remove("tampil");
   gambar();
 };
@@ -829,12 +859,12 @@ document.getElementById("tbl-editor-simpan").onclick = async ()=>{
   const nama = document.getElementById("in-editor-nama").value.trim();
   if(!nama) return;
   data.hadiah[editIndex] = {emoji: editorEmojiPilih || "🎁", nama};
-  await simpanan.taruh(KUNCI, data);
+  await simpanStatusJarakJauh();
   document.getElementById("editor-hadiah").classList.remove("tampil");
   gambarHadiah();
 };
 document.getElementById("tbl-hadiah-ok").onclick = async ()=>{
-  await simpanan.taruh(KUNCI, data);
+  await simpanStatusJarakJauh();
   tampilkan("utama");
 };
 document.getElementById("tbl-hadiah-tutup").onclick = ()=>{
@@ -966,7 +996,7 @@ async function tekan(){
   gambar();
   const kartu = papan.querySelector(`[data-i="${fokus}"]`);
   if(kartu && (data.catatan[k][a.id]||0) > n){ bintangTerbang(kartu); bunyi(true); }
-  await simpanan.taruh(KUNCI, data);
+  await simpanStatusJarakJauh();
   if(sebelum < data.target && data.bintangTerkumpul >= data.target) rayakan();
 }
 function tebarKonfeti(){
@@ -996,7 +1026,7 @@ function rayakan(){
     konfeti.forEach(el=>el.remove());
     data.bintangTerkumpul = 0;
     data.hadiahTerpilih = -1;
-    await simpanan.taruh(KUNCI, data);
+    await simpanStatusJarakJauh();
     tentukanLayar();
   };
   setTimeout(lanjut, 6000);
@@ -1023,7 +1053,7 @@ document.addEventListener("keydown", e=>{
     case "ArrowDown": pindah(0,1); e.preventDefault(); break;
     case "Enter": case " ": tekan(); e.preventDefault(); break;
     case "p": case "P": bukaOrtu(); break;
-    case "m": case "M": data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanan.taruh(KUNCI,data); break;
+    case "m": case "M": data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanStatusJarakJauh(); break;
   }
 });
 
@@ -1080,7 +1110,7 @@ function bukaOrtu(){
 }
 function tutupOrtu(tanpaGambar){ tirai.classList.remove("tampil"); if(!tanpaGambar) gambar(); }
 document.getElementById("tbl-ortu").onclick = ()=> mintaPin(ok=>{ if(ok) bukaOrtu(); });
-document.getElementById("tbl-suara").onclick = ()=>{ data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanan.taruh(KUNCI,data); };
+document.getElementById("tbl-suara").onclick = ()=>{ data.suara=!data.suara; perbarui(); perbaruiVolumeMusik(); simpanStatusJarakJauh(); };
 tirai.addEventListener("click", e=>{ if(e.target===tirai) tutupOrtu(); });
 
 function gambarDaftar(){
@@ -1122,33 +1152,33 @@ document.getElementById("tbl-tambah").onclick = ()=>{
 };
 document.getElementById("tbl-simpan").onclick = async ()=>{
   bacaPengaturan(); fokus = 0;
-  await simpanan.taruh(KUNCI, data);
+  await simpanStatusJarakJauh();
   tutupOrtu(); kirimAntre();
 };
 document.getElementById("tbl-uji").onclick = async ()=>{
-  bacaPengaturan(); await simpanan.taruh(KUNCI, data);
+  bacaPengaturan(); await simpanStatusJarakJauh();
   if(!data.url || !data.token){ statusTeks("Isi URL dan kata rahasia dulu."); return; }
   statusTeks("Menguji…");
   antre.push({ uid: uid(), waktu:new Date().toISOString(), tanggal: hariIni(),
     id:"uji", nama:"UJI KONEKSI", bintang:0, aksi:"uji" });
   kirimAntre();
 };
-document.getElementById("tbl-kirim-ulang").onclick = ()=>{ bacaPengaturan(); susunUlangSemua(); };
-document.getElementById("tbl-tarik").onclick = async ()=>{ bacaPengaturan(); await simpanan.taruh(KUNCI,data); tarikDariSheet(); };
+document.getElementById("tbl-kirim-ulang").onclick = ()=>{ bacaPengaturan(); simpanStatusJarakJauh(); susunUlangSemua(); };
+document.getElementById("tbl-tarik").onclick = async ()=>{ bacaPengaturan(); await muatStatusJarakJauh(true); };
 document.getElementById("tbl-reset-hari").onclick = async ()=>{
   delete data.catatan[hariIni()];
-  await simpanan.taruh(KUNCI, data); gambar();
+  await simpanStatusJarakJauh(); gambar();
 };
 document.getElementById("tbl-reset-minggu").onclick = async ()=>{
   const m=awalMinggu();
   for(let i=0;i<7;i++){ const d=new Date(m); d.setDate(m.getDate()+i); delete data.catatan[kunciTgl(d)]; }
-  await simpanan.taruh(KUNCI, data); gambar();
+  await simpanStatusJarakJauh(); gambar();
 };
 
 /* ============ simpan manual ============ */
 let toastTimer = null;
 async function simpanHariIni(){
-  await simpanan.taruh(KUNCI, data);
+  await simpanStatusJarakJauh();
   kirimAntre();
   const t = document.getElementById("toast-simpan");
   t.classList.add("tampil");
@@ -1160,6 +1190,7 @@ document.getElementById("tbl-simpan-hari").onclick = simpanHariIni;
 
 /* ============ mulai ============ */
 (async function(){
+  // 1) cadangan lokal dulu, biar layar tidak kosong sementara menunggu jaringan
   const tersimpan = await simpanan.ambil(KUNCI);
   if(tersimpan && tersimpan.aktivitas) data = Object.assign(structuredClone(AWAL), tersimpan);
   if(!data.url) data.url = AWAL.url;
@@ -1167,9 +1198,18 @@ document.getElementById("tbl-simpan-hari").onclick = simpanHariIni;
   data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
   antre = (await simpanan.ambil(KUNCI_ANTRE)) || [];
   tentukanLayar();
-  if(data.url && data.token){ setLampu(antre.length?"antre":"aman"); kirimAntre(); }
-  setInterval(()=>{ perbarui(); kirimAntre(); tentukanLayar(); }, 60000);
-  window.addEventListener("online", kirimAntre);
+
+  // 2) spreadsheet adalah sumber utama: tarik status terbaru begitu terbuka
+  if(data.url && data.token){
+    setLampu(antre.length?"antre":"aman");
+    await muatStatusJarakJauh();
+    kirimAntre();
+  }
+
+  // 3) jaga tetap sinkron: polling ringan + saat layar aktif lagi + saat online lagi
+  setInterval(()=>{ perbarui(); kirimAntre(); muatStatusJarakJauh(); }, 20000);
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) muatStatusJarakJauh(); });
+  window.addEventListener("online", ()=>{ kirimAntre(); muatStatusJarakJauh(); });
 })();
 </script>
 </body>
