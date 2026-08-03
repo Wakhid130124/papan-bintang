@@ -442,6 +442,7 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
       <button class="tbl-aksi sepi" id="tbl-uji">Uji koneksi</button>
       <button class="tbl-aksi sepi" id="tbl-kirim-ulang">Paksa Simpan ke Spreadsheet</button>
       <button class="tbl-aksi sepi" id="tbl-tarik">Tarik Status Terbaru dari Spreadsheet</button>
+      <button class="tbl-aksi sepi" id="tbl-pulihkan">Pulihkan Bintang dari Riwayat</button>
     </div>
     <p id="status-sinkron">Belum tersambung.</p>
 
@@ -1218,6 +1219,42 @@ document.getElementById("tbl-uji").onclick = async ()=>{
 };
 document.getElementById("tbl-kirim-ulang").onclick = ()=>{ bacaPengaturan(); simpanStatusJarakJauh(); susunUlangSemua(); };
 document.getElementById("tbl-tarik").onclick = async ()=>{ bacaPengaturan(); await muatStatusJarakJauh(true); };
+document.getElementById("tbl-pulihkan").onclick = async ()=>{
+  bacaPengaturan();
+  if(!data.url || !data.token){ statusTeks("Isi URL dan kata rahasia dulu."); return; }
+  if(!confirm(
+    "Ini akan menghitung ulang total bintang & catatan harian dari SELURUH riwayat " +
+    "di sheet 'Peristiwa', lalu menimpa status saat ini dengan hasilnya.\n\n" +
+    "Hanya pakai ini kalau belum pernah mencapai/mengambil hadiah sebelumnya " +
+    "(karena pencapaian hadiah mengosongkan hitungan tanpa tercatat di riwayat).\n\n" +
+    "Lanjutkan?"
+  )) return;
+  statusTeks("Mengambil riwayat…");
+  try{
+    // tanpa parameter "aksi" -> server mengembalikan SELURUH baris di sheet 'Peristiwa'
+    const r = await fetch(`${data.url}?token=${encodeURIComponent(data.token)}&_=${Date.now()}`, { cache:"no-store" });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.pesan || "gagal mengambil riwayat");
+    const daftar = (j.peristiwa || []).slice().sort((a,b)=> new Date(a.waktu) - new Date(b.waktu));
+    const catatanBaru = {};
+    let totalBaru = 0;
+    daftar.forEach(p=>{
+      if(p.aksi === "uji") return;
+      totalBaru += Number(p.bintang) || 0;
+      catatanBaru[p.tanggal] = catatanBaru[p.tanggal] || {};
+      const n = (catatanBaru[p.tanggal][p.id] || 0) + (p.aksi === "batal" ? -1 : 1);
+      if(n > 0) catatanBaru[p.tanggal][p.id] = n;
+      else delete catatanBaru[p.tanggal][p.id];
+    });
+    data.catatan = catatanBaru;
+    data.bintangTerkumpul = Math.max(0, totalBaru);
+    await simpanStatusJarakJauh();
+    gambarDaftar();
+    statusTeks(`Dipulihkan: ${data.bintangTerkumpul} bintang dari ${daftar.length} baris riwayat.`);
+  }catch(err){
+    statusTeks("Gagal memulihkan: " + err.message);
+  }
+};
 document.getElementById("tbl-reset-hari").onclick = async ()=>{
   delete data.catatan[hariIni()];
   await simpanStatusJarakJauh(); gambar();
