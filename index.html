@@ -109,11 +109,10 @@ body{
 .tombol-mengambang{position:absolute;top:1.6vmin;z-index:20;background:rgba(255,246,230,.1);border:.35vmin solid transparent;color:var(--susu);cursor:pointer;
   width:6vmin;height:6vmin;border-radius:50%;font-size:2.6vmin;display:grid;place-items:center;transition:transform .12s ease-out,border-color .12s ease-out}
 .tombol-mengambang.kiri{left:1.6vmin}.tombol-mengambang.kanan{right:1.6vmin}
-.tombol-mengambang.tengah{left:50%;transform:translateX(-50%)}
-.tombol-mengambang.tengah.tutup{background:rgba(224,87,74,.22);font-size:2.2vmin}
+.tombol-mengambang.kanan-dua{right:8.6vmin}
+.tombol-mengambang.kanan-dua.tutup{background:rgba(224,87,74,.22);font-size:2.2vmin}
 .tombol-mengambang:hover,.tombol-mengambang:focus-visible{background:rgba(255,246,230,.22);outline:none}
 .tombol-mengambang.fokus{border-color:var(--bintang);transform:scale(1.1)}
-.tombol-mengambang.tengah.fokus{transform:translateX(-50%) scale(1.1)}
 .tombol-simpan-hari.fokus{outline:.5vmin solid var(--susu);transform:scale(1.06)}
 #lampu-sinkron{position:absolute;right:.5vmin;bottom:.5vmin;width:1.4vmin;height:1.4vmin;border-radius:50%;background:#777;transition:background .3s}
 #lampu-sinkron.aman{background:var(--daun)} #lampu-sinkron.antre{background:var(--bintang)} #lampu-sinkron.mati{background:#e0574a}
@@ -339,7 +338,7 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
 <div class="halaman" id="layar-utama">
   <div class="layar">
     <button class="tombol-mengambang kiri" id="tbl-suara" title="Suara">🔊</button>
-    <button class="tombol-mengambang tengah tutup" id="tbl-tutup" title="Tutup aplikasi">✕</button>
+    <button class="tombol-mengambang kanan-dua tutup" id="tbl-tutup" title="Tutup aplikasi">✕</button>
     <button class="tombol-mengambang kanan" id="tbl-ortu" title="Pengaturan orang tua">⚙️<i id="lampu-sinkron"></i></button>
 
     <div class="banner-judul">
