@@ -243,7 +243,6 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
 <body>
 <div id="langit"></div>
 
-<!-- ===== halaman 1: profil anak ===== -->
 <div class="halaman" id="layar-onboarding">
   <div class="halaman-tengah">
     <div class="kotak-halaman">
@@ -272,7 +271,6 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
   </div>
 </div>
 
-<!-- ===== halaman 2: pilih hadiah minggu ini ===== -->
 <div class="halaman" id="layar-hadiah">
   <div class="halaman-tengah">
     <div class="kotak-halaman">
@@ -285,7 +283,6 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
   </div>
 </div>
 
-<!-- ===== editor hadiah (popover) ===== -->
 <div class="editor-hadiah" id="editor-hadiah">
   <div class="kotak-editor">
     <h2>Isi Hadiah</h2>
@@ -300,7 +297,6 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
   </div>
 </div>
 
-<!-- ===== editor emoji aktivitas (popover) ===== -->
 <div class="editor-hadiah" id="editor-aktivitas-emoji">
   <div class="kotak-editor">
     <h2>Pilih Ikon Aktivitas</h2>
@@ -311,7 +307,6 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
   </div>
 </div>
 
-<!-- ===== editor tambah aktivitas baru (langsung dari halaman utama) ===== -->
 <div class="editor-hadiah" id="editor-aktivitas-baru">
   <div class="kotak-editor">
     <h2>Tambah Aktivitas Baru</h2>
@@ -328,7 +323,6 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
   </div>
 </div>
 
-<!-- ===== halaman 3: papan bintang utama ===== -->
 <div class="halaman" id="layar-utama">
   <div class="layar">
     <button class="tombol-mengambang kiri" id="tbl-suara" title="Suara">🔊</button>
@@ -657,19 +651,27 @@ async function simpanStatusJarakJauh(){
 }
 
 async function muatStatusJarakJauh(tampilkanStatus){
-  if(!data.url || !data.token || sedangMuatStatus) return;
+  if(!data.url || !data.token || sedangMuatStatus) return false;
   sedangMuatStatus = true;
+  let berhasil = false;
   try{
     const r = await fetch(`${data.url}?token=${encodeURIComponent(data.token)}&aksi=status`);
     const j = await r.json();
     if(j.ok && j.status){
       const jauh = JSON.parse(j.status);
+      
+      // Gabungkan riwayat catatan secara menyeluruh agar data minggu lalu tidak hilang
+      const catatanGabungan = Object.assign({}, jauh.catatan || {}, data.catatan || {});
+      
       data = Object.assign(structuredClone(AWAL), jauh);
+      data.catatan = catatanGabungan; // pastikan catatan utuh
       data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
+      
       await simpanan.taruh(KUNCI, data);
       tentukanLayar();
       setLampu("aman");
       if(tampilkanStatus) statusTeks("Status terbaru dari spreadsheet berhasil dimuat.");
+      berhasil = true;
     } else if(tampilkanStatus){
       statusTeks("Belum ada status tersimpan di spreadsheet — akan dibuat otomatis saat pertama kali disimpan.");
     }
@@ -678,6 +680,7 @@ async function muatStatusJarakJauh(tampilkanStatus){
     if(tampilkanStatus) statusTeks("Gagal mengambil status: " + err.message);
   }
   sedangMuatStatus = false;
+  return berhasil;
 }
 
 /* ============ pengalih halaman ============ */
@@ -1190,26 +1193,28 @@ document.getElementById("tbl-simpan-hari").onclick = simpanHariIni;
 
 /* ============ mulai ============ */
 (async function(){
-  // 1) cadangan lokal dulu, biar layar tidak kosong sementara menunggu jaringan
+  // 1) Muat cadangan lokal terlebih dahulu
   const tersimpan = await simpanan.ambil(KUNCI);
   if(tersimpan && tersimpan.aktivitas) data = Object.assign(structuredClone(AWAL), tersimpan);
   if(!data.url) data.url = AWAL.url;
   if(!data.token) data.token = AWAL.token;
   data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
   antre = (await simpanan.ambil(KUNCI_ANTRE)) || [];
-  tentukanLayar();
 
-  // 2) spreadsheet adalah sumber utama: tarik status terbaru begitu terbuka
+  // 2) Prioritaskan muat data terbaru dari Spreadsheet jika URL & Token sudah dikonfigurasi
   if(data.url && data.token){
-    setLampu(antre.length?"antre":"aman");
-    await muatStatusJarakJauh();
-    kirimAntre();
+    setLampu("antre");
+    await muatStatusJarakJauh(false);
   }
 
-  // 3) jaga tetap sinkron: polling ringan + saat layar aktif lagi + saat online lagi
-  setInterval(()=>{ perbarui(); kirimAntre(); muatStatusJarakJauh(); }, 20000);
-  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) muatStatusJarakJauh(); });
-  window.addEventListener("online", ()=>{ kirimAntre(); muatStatusJarakJauh(); });
+  // 3) Render tampilan setelah data dari cloud dipastikan termuat
+  tentukanLayar();
+  kirimAntre();
+
+  // 4) Sinkronisasi latar belakang secara berkala
+  setInterval(()=>{ perbarui(); kirimAntre(); muatStatusJarakJauh(false); }, 20000);
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) muatStatusJarakJauh(false); });
+  window.addEventListener("online", ()=>{ kirimAntre(); muatStatusJarakJauh(false); });
 })();
 </script>
 </body>
