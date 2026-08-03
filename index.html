@@ -482,7 +482,9 @@ const simpanan = {
 const AWAL = {
   onboarded:false,
   nama:"Adik", avatar:"🧒", usia:null,
-  target:35, suara:true, pin:"1234", url:"", token:"",
+  target:35, suara:true, pin:"1234",
+  url:"https://script.google.com/macros/s/AKfycbwUfGRR6jHxoHS2FqspC_yl04Jornif6MbB48Who5gt7gKGk-_Y6SiSepTmq7mFioOLQw/exec",
+  token:"Maryam130124",
   hadiah:[
     {emoji:"", nama:""},
     {emoji:"", nama:""},
@@ -541,48 +543,19 @@ function bunyi(naik=true){
   }catch(e){}
 }
 
-/* ============ musik latar ============ */
-let musikGain = null;
-let musikTimer = null;
+/* ============ musik latar (file MP3) ============ */
+const audioMusik = new Audio("musik-latar.mp3");
+audioMusik.loop = true;
+audioMusik.volume = 0.35;
+audioMusik.preload = "auto";
 let musikBerjalan = false;
-const NADA_MUSIK = [523.25,659.25,783.99,659.25,523.25,659.25,783.99,1046.50,783.99,659.25,587.33,523.25];
-let indeksNadaMusik = 0;
-function nadaMusikBerikutnya(){
-  if(!audio || !musikGain) return;
-  const f = NADA_MUSIK[indeksNadaMusik % NADA_MUSIK.length];
-  const ketukKuat = indeksNadaMusik % 4 === 0;
-  indeksNadaMusik++;
-  const o=audio.createOscillator(), g=audio.createGain();
-  o.type="triangle"; o.frequency.value=f;
-  g.gain.setValueAtTime(0.0001, audio.currentTime);
-  g.gain.exponentialRampToValueAtTime(ketukKuat?1:0.72, audio.currentTime+0.015);
-  g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime+0.3);
-  o.connect(g); g.connect(musikGain);
-  o.start(); o.stop(audio.currentTime+0.32);
-  if(ketukKuat){
-    const ob=audio.createOscillator(), gb=audio.createGain();
-    ob.type="sine"; ob.frequency.value=f/4;
-    gb.gain.setValueAtTime(0.0001, audio.currentTime);
-    gb.gain.exponentialRampToValueAtTime(0.55, audio.currentTime+0.02);
-    gb.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime+0.45);
-    ob.connect(gb); gb.connect(musikGain);
-    ob.start(); ob.stop(audio.currentTime+0.5);
-  }
-  musikTimer = setTimeout(nadaMusikBerikutnya, 340);
-}
 function mulaiMusik(){
   if(musikBerjalan) return;
-  try{
-    audio = audio || new (window.AudioContext||window.webkitAudioContext)();
-    if(audio.state==="suspended") audio.resume();
-    musikGain = audio.createGain();
-    musikGain.gain.value = data.suara ? 0.05 : 0;
-    musikGain.connect(audio.destination);
-    musikBerjalan = true;
-    nadaMusikBerikutnya();
-  }catch(e){}
+  musikBerjalan = true;
+  audioMusik.muted = !data.suara;
+  audioMusik.play().catch(()=>{ musikBerjalan = false; });
 }
-function perbaruiVolumeMusik(){ if(musikGain) musikGain.gain.value = data.suara ? 0.05 : 0; }
+function perbaruiVolumeMusik(){ audioMusik.muted = !data.suara; }
 document.addEventListener("pointerdown", mulaiMusik, {once:true});
 document.addEventListener("keydown", mulaiMusik, {once:true});
 
@@ -1189,6 +1162,8 @@ document.getElementById("tbl-simpan-hari").onclick = simpanHariIni;
 (async function(){
   const tersimpan = await simpanan.ambil(KUNCI);
   if(tersimpan && tersimpan.aktivitas) data = Object.assign(structuredClone(AWAL), tersimpan);
+  if(!data.url) data.url = AWAL.url;
+  if(!data.token) data.token = AWAL.token;
   data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
   antre = (await simpanan.ambil(KUNCI_ANTRE)) || [];
   tentukanLayar();
