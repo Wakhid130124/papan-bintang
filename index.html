@@ -634,6 +634,7 @@ function susunUlangSemua(){
 let statusTimerKirim = null;
 let sedangMuatStatus = false;
 let sudahMuatAwal = false; // true setelah berhasil menarik status terbaru dari spreadsheet minimal 1x di sesi ini
+let diperbaruiDiketahui = null; // stempel waktu "diperbarui" terakhir yang kita tahu dari server, dipakai server untuk deteksi tabrakan
 
 async function simpanStatusJarakJauh(){
   await simpanan.taruh(KUNCI, data); // cadangan lokal cepat, jaga-jaga internet putus
@@ -658,13 +659,36 @@ async function simpanStatusJarakJauh(){
 
   clearTimeout(statusTimerKirim);
   statusTimerKirim = setTimeout(async ()=>{
-    const muatan = JSON.stringify({ token: data.token, aksi:"simpanStatus", status: JSON.stringify(data) });
+    const muatan = JSON.stringify({
+      token: data.token, aksi:"simpanStatus",
+      status: JSON.stringify(data),
+      diperbaruiSumber: diperbaruiDiketahui // dipakai server untuk deteksi tabrakan
+    });
     try{
       const r = await fetch(data.url, { method:"POST", redirect:"follow", cache:"no-store",
         headers:{ "Content-Type":"text/plain;charset=utf-8" }, body: muatan });
       const j = await r.json();
-      setLampu(j.ok ? "aman" : "mati");
-      if(j.ok) statusTeks("Tersambung. Status terbaru tersimpan di spreadsheet.");
+      if(j.ok){
+        diperbaruiDiketahui = j.diperbarui || diperbaruiDiketahui;
+        setLampu("aman");
+        statusTeks("Tersambung. Status terbaru tersimpan di spreadsheet.");
+      } else if(j.konflik){
+        // Ada perangkat lain yang sudah menyimpan lebih dulu -> penyimpanan kita
+        // DITOLAK server (sengaja, supaya tidak menimpa). Ambil versi terbaru
+        // mereka supaya layar ini langsung sinkron lagi.
+        if(j.status){
+          const jauh = JSON.parse(j.status);
+          data = Object.assign(structuredClone(AWAL), jauh);
+          data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
+          await simpanan.taruh(KUNCI, data);
+          tentukanLayar();
+        }
+        diperbaruiDiketahui = j.diperbarui || diperbaruiDiketahui;
+        setLampu("aman");
+        statusTeks("Ada pembaruan dari perangkat lain — layar ini baru saja disegarkan.");
+      } else {
+        setLampu("mati");
+      }
     }catch(err){
       try{
         await fetch(data.url, { method:"POST", mode:"no-cors", cache:"no-store",
@@ -691,12 +715,15 @@ async function muatStatusJarakJauh(tampilkanStatus){
       await simpanan.taruh(KUNCI, data);
       tentukanLayar();
       setLampu("aman");
+      diperbaruiDiketahui = j.diperbarui || null;
       sudahMuatAwal = true;
       if(tampilkanStatus) statusTeks("Status terbaru dari spreadsheet berhasil dimuat.");
     } else if(tampilkanStatus){
+      diperbaruiDiketahui = j.diperbarui || null;
       sudahMuatAwal = true; // tidak ada status tersimpan sama sekali di sheet -> sah untuk mulai menulis
       statusTeks("Belum ada status tersimpan di spreadsheet — akan dibuat otomatis saat pertama kali disimpan.");
     } else if(j.ok){
+      diperbaruiDiketahui = j.diperbarui || null;
       sudahMuatAwal = true; // respons sah (walau status kosong)
     }
   }catch(err){
