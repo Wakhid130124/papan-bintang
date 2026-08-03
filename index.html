@@ -29,7 +29,6 @@ body{
 #langit i{position:absolute;background:#fff;border-radius:50%;opacity:.5;animation:kedip 4s infinite ease-in-out}
 @keyframes kedip{0%,100%{opacity:.15}50%{opacity:.7}}
 
-/* ============ halaman (onboarding / hadiah / utama) ============ */
 .halaman{position:fixed;inset:0;z-index:5;display:none}
 .halaman.aktif{display:block}
 .halaman-tengah{width:100%;height:100%;display:grid;place-items:center;padding:4vmin;overflow:auto;position:relative;z-index:1}
@@ -66,7 +65,6 @@ body{
   background:rgba(255,246,230,.1);border:0;color:var(--susu);font-size:2.2vmin;display:none;place-items:center;cursor:pointer}
 .tombol-kecil-atas.tampak{display:grid}
 
-/* ============ halaman pilih hadiah ============ */
 .grid-hadiah{display:grid;grid-template-columns:repeat(2,1fr);gap:2vmin;margin-bottom:3vmin}
 .kartu-hadiah{position:relative;border-radius:var(--r);padding:2.6vmin 1.6vmin;background:rgba(255,246,230,.06);
   border:.3vmin solid rgba(255,246,230,.12);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1.1vmin;
@@ -103,7 +101,6 @@ body{
   background:rgba(0,0,0,.28);border:.25vmin solid rgba(255,246,230,.18);border-radius:1vmin;color:var(--susu);cursor:pointer;flex:0 0 auto}
 .tombol-emoji-aktivitas:hover,.tombol-emoji-aktivitas:focus-visible{border-color:var(--bintang);outline:none}
 
-/* ============ halaman utama (papan bintang) ============ */
 .layar{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:var(--pad) calc(var(--pad)*1.4);gap:1.6vmin}
 
 .tombol-mengambang{position:absolute;top:1.6vmin;z-index:20;background:rgba(255,246,230,.1);border:0;color:var(--susu);cursor:pointer;
@@ -148,7 +145,7 @@ main.papan-dua-kolom{flex:1 1 auto;display:grid;grid-template-columns:1.05fr 1fr
 .kartu .hitung{flex:0 0 auto;font-weight:900;font-size:1.8vmin;color:var(--bintang)}
 .kartu.tambah-aktivitas{justify-content:center;border-left:0!important;border:.25vmin dashed rgba(255,246,230,.3);background:rgba(255,246,230,.03)}
 .kartu.tambah-aktivitas:hover{background:rgba(255,246,230,.08)}
-.kartu.tambah-aktivitas .nama(color:var(--kabur))}
+.kartu.tambah-aktivitas .nama{color:var(--kabur)}
 .lencana-tambah{flex:0 0 auto;width:4.2vmin;height:4.2vmin;border-radius:50%;background:rgba(255,246,230,.12);color:var(--susu);
   font-family:"Fredoka",sans-serif;font-weight:700;font-size:2.6vmin;display:grid;place-items:center}
 
@@ -329,9 +326,9 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
     <button class="tombol-mengambang kanan" id="tbl-ortu" title="Pengaturan orang tua">⚙️<i id="lampu-sinkron"></i></button>
 
     <div class="banner-judul">
-      <span class="banner-avatar" id="avatar">🧒</span>
+      <span class="banner-avatar" id="avatar">👧</span>
       <div class="banner-teks">
-        <h1>Petualangan Bintang Hebat, <span id="nama-anak">Adik</span>!</h1>
+        <h1>Petualangan Bintang Hebat, <span id="nama-anak">Maryam</span>!</h1>
         <p id="tanggal">Kumpulkan Bintang dan Dapatkan Hadiah!</p>
       </div>
       <span class="banner-avatar">🚀</span>
@@ -339,7 +336,7 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
 
     <main class="papan-dua-kolom">
       <section class="panel kolom-tugas">
-        <h2><span id="nama-anak-judul">Adik</span>'s Magical Star Chart</h2>
+        <h2><span id="nama-anak-judul">Maryam</span>'s Magical Star Chart</h2>
         <div id="papan"></div>
       </section>
 
@@ -450,7 +447,6 @@ kbd{background:rgba(255,246,230,.14);border-radius:.6vmin;padding:.2vmin .9vmin;
 <script>
 /* ============ penyimpanan berlapis ============ */
 const KUNCI = "papanbintang:v3";
-const KUNCI_ANTRE = "papanbintang:antre";
 const cadangan = {};
 const simpanan = {
   async ambil(k){
@@ -467,18 +463,18 @@ const simpanan = {
 
 /* ============ data awal ============ */
 const AWAL = {
-  onboarded:false,
-  nama:"Maryam", avatar:"👧", usia:null,
+  onboarded:true,
+  nama:"Maryam", avatar:"👧", usia:2,
   target:35, suara:true, pin:"1234",
   url:"https://script.google.com/macros/s/AKfycbwUfGRR6jHxoHS2FqspC_yl04Jornif6MbB48Who5gt7gKGk-_Y6SiSepTmq7mFioOLQw/exec",
   token:"Maryam130124",
   hadiah:[
-    {emoji:"", nama:""},
-    {emoji:"", nama:""},
-    {emoji:"", nama:""},
-    {emoji:"", nama:""}
+    {emoji:"🧸", nama:"Beli Boneka"},
+    {emoji:"🍦", nama:"Makan Es Krim"},
+    {emoji:"🛝", nama:"Ke Taman Bermain"},
+    {emoji:"📚", nama:"Buku Gambar"}
   ],
-  hadiahTerpilih:-1,
+  hadiahTerpilih:0,
   bintangTerkumpul:0,
   aktivitas:[
     {id:"a1", emoji:"🧸", nama:"Merapikan Mainan", kutipan:"Mainan masuk kotak!", bintang:1, maks:1},
@@ -490,7 +486,6 @@ const AWAL = {
   catatan:{}
 };
 let data = structuredClone(AWAL);
-let antre = [];
 let fokus = 0;
 
 /* ============ tanggal ============ */
@@ -540,10 +535,10 @@ function mulaiMusik(){
   audioMusik.play().catch(()=>{ musikBerjalan = false; });
 }
 function perbaruiVolumeMusik(){ audioMusik.muted = !data.suara; }
-document.addEventListener("pointerdown", mulaiMusik, {once:false});
-document.addEventListener("keydown", mulaiMusik, {once:false});
+document.addEventListener("pointerdown", mulaiMusik);
+document.addEventListener("keydown", mulaiMusik);
 
-/* ============ sinkronisasi bersih kuesioner style ============ */
+/* ============ sinkronisasi bersih ============ */
 const lampu = document.getElementById("lampu-sinkron");
 function setLampu(k){ lampu.className = k; }
 function statusTeks(t){ const el=document.getElementById("status-sinkron"); if(el) el.textContent = t; }
@@ -555,7 +550,6 @@ async function kirimStatusJarakJauh(){
   sedangKirim = true;
   setLampu("antre");
   
-  // Menggunakan metode pengiriman JSON utuh satu arah sama seperti kuesioner Anda
   const muatan = JSON.stringify({ token: data.token, aksi:"simpanStatus", status: JSON.stringify(data) });
   try{
     await fetch(data.url, { 
@@ -565,7 +559,7 @@ async function kirimStatusJarakJauh(){
       body: muatan 
     });
     setLampu("aman");
-    statusTeks("Tersambung. Data aman.");
+    statusTeks("Tersambung. Data tersimpan.");
   } catch(err) { 
     setLampu("mati"); 
   }
@@ -582,14 +576,13 @@ async function muatStatusJarakJauh(tampilkanStatus){
     
     if(j.ok && j.status){
       const jauh = typeof j.status === 'string' ? JSON.parse(j.status) : j.status;
-      // Menjaga agar aktivitas terproteksi
       if (jauh.catatan) {
         data = Object.assign(structuredClone(AWAL), jauh);
         data.bintangTerkumpul = bintangMinggu();
         await simpanan.taruh(KUNCI, data);
         gambar();
         setLampu("aman");
-        if(tampilkanStatus) statusTeks("Data sinkron berhasil diambil.");
+        if(tampilkanStatus) statusTeks("Data sinkron berhasil dimuat.");
       }
     }
   }catch(err){
@@ -647,7 +640,7 @@ function cekTombolOnboard(){
   const nama = document.getElementById("in-onboard-nama").value.trim();
   document.getElementById("tbl-onboard-ok").disabled = !(nama.length>0 && avatarPilihSementara);
 }
-document.getElementById("in-onboard-nama").addEventListener("input", cekTomBOlOnboard);
+document.getElementById("in-onboard-nama").addEventListener("input", cekTombolOnboard);
 document.getElementById("in-onboard-usia").addEventListener("input", cekTombolOnboard);
 document.getElementById("tbl-onboard-ok").onclick = async ()=>{
   data.nama = document.getElementById("in-onboard-nama").value.trim() || "Maryam";
@@ -1037,13 +1030,13 @@ document.getElementById("tbl-simpan-hari").onclick = simpanHariIni;
   if(!data.token) data.token = AWAL.token;
   data.aktivitas.forEach(a=>{ a.bintang=1; a.maks=1; });
 
+  // Tampilkan layar utama secara langsung
+  tentukanLayar();
+
   if(data.url && data.token){
     await muatStatusJarakJauh(false);
   }
-
-  tentukanLayar();
   
-  // Mengikuti interval pas dari kuesioner agar server stabil & tidak terjadi spam
   setInterval(()=>{ muatStatusJarakJauh(false); }, 30000);
 })();
 </script>
